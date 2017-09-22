@@ -42,6 +42,7 @@ function customerPurchase(){
 	var reslen;
 	var quant;
 	var quantav;
+	var price;
 	
 	inquirer.prompt([
 	{
@@ -64,6 +65,7 @@ function customerPurchase(){
 				if (res.length != 0) {
 
 					idnum = value;
+					idname = res[0].product_name;
 		        	done(null, true);
 
 				}
@@ -81,7 +83,7 @@ function customerPurchase(){
 			// Declare function as asynchronous, and save the done callback
 		    var done = this.async();
 
-			connection.query("SELECT stock_quantity FROM products WHERE ?",{item_id: idnum}, function(err, res) {
+			connection.query("SELECT stock_quantity,price FROM products WHERE ?",{item_id: idnum}, function(err, res) {
 
 				if (err) {
 		        	done(`Got an error from mySql: ${err}`);
@@ -93,6 +95,7 @@ function customerPurchase(){
 
 					quant = parseInt(value);
 					quantav = res[0].stock_quantity;
+					price = res[0].price;
 
 					// console.log(quant);
 					// console.log(quantav);
@@ -110,6 +113,25 @@ function customerPurchase(){
 		}
 	}
 	]).then(function(answer){
-		console.log(answer);
+		var newquant = quantav - quant;
+		var totprice = quant * price;
+		connection.query(
+    "UPDATE products SET ? WHERE ?",
+    [
+      {
+        stock_quantity: newquant
+      },
+      {
+        item_id: idnum
+      }
+    ],
+    function(error) {
+      if (error) throw error;
+      console.log('');
+      console.log('---------------------');
+      console.log(`Your Order has been Placed, Your Total Price is $${totprice} 
+      	there are now ${newquant} units of product: ${idname},
+      	remaining.`);
+    });
 	})
 };
